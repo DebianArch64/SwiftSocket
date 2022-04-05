@@ -105,6 +105,17 @@ int ytcpsocket_close(int socketfd){
     return close(socketfd);
 }
 
+int ytcpsocket_bytes_available(int socketfd) {
+     int count;
+     int callResult = ioctl(socketfd, FIONREAD, &count);
+
+     if (callResult < 0) {
+         return callResult;
+     }
+
+     return count;
+ }
+
 int ytcpsocket_pull(int socketfd, char *data, int len, int timeout_sec) {
     int readlen = 0;
     int datalen = 0;
@@ -123,23 +134,13 @@ int ytcpsocket_pull(int socketfd, char *data, int len, int timeout_sec) {
     // use loop to make sure receive all data
     do {
         readlen = (int)read(socketfd, data + datalen, len - datalen);
+        printf("%d\n",readlen);
         if (readlen > 0) {
             datalen += readlen;
         }
-    } while (readlen > 0);
+    } while (ytcpsocket_bytes_available(socketfd) > 0);
     
     return datalen;
-}
-
-int ytcpsocket_bytes_available(int socketfd) {
-    int count;
-    int callResult = ioctl(socketfd, FIONREAD, &count);
-
-    if (callResult < 0) {
-        return callResult;
-    }
-
-    return count;
 }
 
 int ytcpsocket_send(int socketfd, const char *data, int len){
